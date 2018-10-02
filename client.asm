@@ -44,7 +44,6 @@ section .text
 global _start
 
 _start:
-
     jmp exit
 
 exit:
@@ -54,7 +53,7 @@ exit:
 
 ;; Performs a sys_socket call to initialise a TCP/IP listening socket.
 ;; Stores the socket file descriptor in the sock variable
-_socket:
+socket:
     ; SYS_SOCKET
     mov eax, 41
     ; AF_INET
@@ -65,7 +64,7 @@ _socket:
     int 0x80
 
     cmp eax, 0
-    jle _socket_fail
+    jle socket_fail
 
     mov [sock], eax
     ret
@@ -74,23 +73,23 @@ _socket:
 ;; _*_fail loads the rsi and rdx registers with the appropriate
 ;; error messages for given system call. Then call _fail to display the
 ;; error message and exit the application.
-_socket_fail:
+socket_fail:
     mov esi, sock_err_msg
     mov edx, sock_err_msg_len
-    call _fail
+    call fail
 
-_connect_fail:
+connect_fail:
     mov esi, accept_err_msg
     mov edx, accept_err_msg_len
-    call _fail
+    call fail
 
 ;; Calls the sys_write syscall, writing an error message to stderr, then exits
 ;; the application. rsi and rdx must be loaded with the error message and
 ;; length of the error message before calling _fail
-_fail:
+fail:
     mov eax, 1 ; SYS_WRITE
     mov edi, 2 ; STDERR
     int 0x8
 
     mov edi, 1
-    call _exit
+    call exit

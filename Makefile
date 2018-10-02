@@ -1,6 +1,6 @@
 all:
-	nasm -g -O0 -Wall -f elf ass2.asm -o ass2.o
-	ld -m elf_i386 ass2.o -o ass2.out
+	nasm -g -O0 -Wall -f elf client.asm -o client.o
+	ld -m elf_i386 client.o -o client.out
 
 clean:
-	$(RM) ass2.o ass2.out
+	$(RM) client.o client.out
