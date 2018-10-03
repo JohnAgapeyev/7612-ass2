@@ -12,6 +12,9 @@ section .data
     connect_err_msg db "Failed to connect to server", 0x0a, 0
     connect_err_msg_len equ $-connect_err_msg
 
+    server_msg db "Server responded with: ", 0
+    server_msg_len equ $-server_msg
+
     IP_1 equ 127
     IP_2 equ 0
     IP_3 equ 0
@@ -31,9 +34,8 @@ section .data
 section .bss
     sock resd 1
     client resd 1
-    echobuf resb 256
+    buffer resb 256
     read_count resd 1
-
 
 section .text
 global _start
@@ -46,15 +48,59 @@ _start:
     call socket
 
     call connect
-    jmp exit
+
+    .read:
+    ; Read
+    mov eax, 3
+    ; stdin
+    mov ebx, 0
+    mov ecx, buffer
+    mov edx, 256
+    int 0x80
+
+    cmp eax, 0
+    jl exit
+
+    mov edx, eax
+
+    mov eax, 4
+    mov ebx, [sock]
+    mov ecx, buffer
+
+    int 0x80
+
+    ; Read
+    mov eax, 3
+    mov ebx, [sock]
+    mov ecx, buffer
+    mov edx, 256
+    int 0x80
+
+    cmp eax, 0
+    jl exit
+
+    push eax
+
+    ; Write
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, server_msg
+    mov edx, server_msg_len
+    int 0x80
+    ; Write
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, buffer
+    pop edx
+    int 0x80
+
+    jmp .read
 
 exit:
     mov eax, 1
     mov ebx, 0
     int 0x80
 
-; Performs a sys_socket call to initialise a TCP/IP listening socket.
-; Stores the socket file descriptor in the sock variable
 socket:
     ; socketcall
     mov eax, 102
@@ -72,7 +118,7 @@ socket:
     add esp, 12
 
     cmp eax, 0
-    jle .socket_fail
+    jl .socket_fail
 
     mov [sock], eax
 
@@ -120,8 +166,10 @@ connect:
 
     int 0x80
 
+    add esp, 12
+
     cmp eax, 0
-    jle .connect_fail
+    jl .connect_fail
     ret
     .connect_fail:
     mov ecx, connect_err_msg
