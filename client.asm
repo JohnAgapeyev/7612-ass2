@@ -25,9 +25,9 @@ section .data
     pop_sa istruc sockaddr_in
         ; AF_INET
         at sockaddr_in.sin_family, dw 2
-        ; port 22222 in host byte order
-        at sockaddr_in.sin_port, dw 0xce56
-        ; localhost - INADDR_ANY
+        ; Will be filled in later
+        at sockaddr_in.sin_port, dw 0
+        ; Will be filled in later
         at sockaddr_in.sin_addr, dd 0
         at sockaddr_in.sin_zero, dd 0, 0
     iend
