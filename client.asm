@@ -120,17 +120,9 @@ connect:
 
     int 0x80
 
-    ;mov eax, 42
-    ;mov ebx, [sock]
-    ;mov ecx, pop_sa
-    ;mov edx, sockaddr_in_len
-    ;int 0x80
-
     cmp eax, 0
     jle .connect_fail
-
     ret
-
     .connect_fail:
     mov ecx, connect_err_msg
     mov edx, connect_err_msg_len
