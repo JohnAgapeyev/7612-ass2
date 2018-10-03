@@ -20,6 +20,8 @@ section .data
     IP_3 equ 0
     IP_4 equ 1
 
+    PORT equ 12345
+
     pop_sa istruc sockaddr_in
         ; AF_INET
         at sockaddr_in.sin_family, dw 2
@@ -44,6 +46,9 @@ _start:
     ; Fill address into struct
     lea edi, [pop_sa + sockaddr_in.sin_addr]
     call load_address
+    ; Fill port into struct
+    lea edi, [pop_sa + sockaddr_in.sin_port]
+    call load_port
 
     call socket
 
@@ -62,11 +67,9 @@ _start:
     jl exit
 
     mov edx, eax
-
     mov eax, 4
     mov ebx, [sock]
     mov ecx, buffer
-
     int 0x80
 
     ; Read
@@ -87,13 +90,12 @@ _start:
     mov ecx, server_msg
     mov edx, server_msg_len
     int 0x80
+
     ; Write
     mov eax, 4
-    mov ebx, 1
     mov ecx, buffer
     pop edx
     int 0x80
-
     jmp .read
 
 exit:
@@ -188,4 +190,11 @@ load_address:
     mov BYTE [edi + 1], IP_2
     mov BYTE [edi + 2], IP_3
     mov BYTE [edi + 3], IP_4
+    ret
+
+load_port:
+    mov ax, PORT
+    bswap eax
+    shr eax, 16
+    mov WORD [edi], ax
     ret
