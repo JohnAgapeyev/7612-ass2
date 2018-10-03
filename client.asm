@@ -15,6 +15,15 @@ section .data
     server_msg db "Server responded with: ", 0
     server_msg_len equ $-server_msg
 
+    ip_prompt db "Enter the server IP: ", 0
+    ip_prompt_len equ $-ip_prompt
+
+    port_prompt db "Enter the server port: ", 0
+    port_prompt_len equ $-port_prompt
+
+    count_prompt db "Enter the message count: ", 0
+    count_prompt_len equ $-count_prompt
+
     IP_1 equ 127
     IP_2 equ 0
     IP_3 equ 0
@@ -35,9 +44,8 @@ section .data
 
 section .bss
     sock resd 1
-    client resd 1
     buffer resb 256
-    read_count resd 1
+    mesg_count resd 1
 
 section .text
 global _start
@@ -53,6 +61,9 @@ _start:
     call socket
 
     call connect
+
+    call read_num_value
+    mov DWORD [mesg_count], eax
 
     .read:
     ; Read
@@ -197,4 +208,201 @@ load_port:
     bswap eax
     shr eax, 16
     mov WORD [edi], ax
+    ret
+
+read_num_value:
+    ;Read string into buffer
+    mov eax, 3
+    mov ebx, 0
+    mov ecx, buffer
+    mov edx, 5
+    int 0x80
+
+    ;Grab number of bytes read
+    mov ecx, eax
+    sub ecx, 2
+
+    xor eax, eax
+    mov ebx, 1
+
+    jmp .loop_start
+
+    .loo:
+    ;Grab current buffer byte
+    mov dl, [buffer + ecx]
+    ;Check if byte is negative sign
+    cmp dl, 0x2d
+    je negative
+    ;Check if byte is less than '0'
+    cmp dl, 0x30
+    jl exit
+    ;Check if byte is greater than '0'
+    cmp dl, 0x39
+    jg exit
+
+    ;eax = (buffer[ecx] & 0xf) * ebx
+    and edx, 0xf
+    imul edx, ebx
+    add eax, edx
+
+    ;ebx *= 10
+    imul ebx, 10
+
+    dec ecx
+
+    .loop_start:
+    ;Loop condition
+    cmp ecx, 0
+    jge .loo
+    ret
+    .negative:
+    neg eax
+    ret
+
+;eax is the value
+write_val:
+    cmp eax, 0
+    jns .write_pos
+
+    ;Negate value
+    neg eax
+
+    ;Save on stack
+    push eax
+
+    ;Write negative sign
+    mov eax, 4
+    mov ebx, 1
+    ;0x2d is the '-' char
+    push 0x2d
+    mov ecx, esp
+    mov edx, 1
+    int 0x80
+
+    ;Pop char off the stack
+    pop ecx
+
+    ;Read back saved positive value
+    pop eax
+
+    .write_pos:
+    ;Store value in ebx
+    mov ebx, eax
+
+    ;Zero out byte counter
+    xor esi, esi
+
+    ;Clear edx
+    xor edx, edx
+
+    ;Set the dividend
+    mov eax, ebx
+    ;Divide by 10k
+    mov ecx, 10000
+    div ecx
+
+    cmp al, 0
+    jz .thousand
+
+    inc esi
+
+    ;Convert number to character equivalent
+    ;al += '0'
+    add al, 48
+    ;Store the 10k byte
+    mov BYTE [buffer], al
+
+    ;Store remainder
+    mov ebx, edx
+
+    .thousand:
+    ;Clear edx
+    xor edx, edx
+
+    ;Set the dividend
+    mov eax, ebx
+    ;Divide by 1k
+    mov ecx, 1000
+    div ecx
+
+    cmp al, 0
+    jz .hundred
+
+    inc esi
+
+    ;Convert number to character equivalent
+    ;al += '0'
+    add al, 48
+    ;Store the 1k byte
+    mov BYTE [buffer + 1], al
+
+    ;Store remainder
+    mov ebx, edx
+
+    .hundred:
+    ;Clear edx
+    xor edx, edx
+
+    ;Set the dividend
+    mov eax, ebx
+    ;Divide by 100
+    mov ecx, 100
+    div ecx
+
+    cmp al, 0
+    jz .ten
+
+    inc esi
+
+    ;Convert number to character equivalent
+    ;al += '0'
+    add al, 48
+    ;Store the 100 byte
+    mov BYTE [buffer + 2], al
+
+    ;Store remainder
+    mov ebx, edx
+
+    .ten:
+    ;Clear edx
+    xor edx, edx
+
+    ;Set the dividend
+    mov eax, ebx
+    ;Divide by 100
+    mov ecx, 10
+    div ecx
+
+    cmp al, 0
+    jz .one
+
+    inc esi
+
+    ;Convert number to character equivalent
+    ;al += '0'
+    add al, 48
+    ;Store the 10 byte
+    mov BYTE [buffer + 3], al
+
+    .one:
+    add dl, 48
+    ;Store the 1 byte
+    mov BYTE [buffer + 4], dl
+
+    ;Add newline char
+    mov BYTE [buffer + 5], 0xa
+
+    add esi, 2
+
+    ;Write
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, buffer
+
+    ;Offset ecx by byte counter to prevent zero padding the string
+    add ecx, 6
+    sub ecx, esi
+
+    mov edx, esi
+    int 0x80
     ret
