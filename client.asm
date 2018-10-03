@@ -69,6 +69,8 @@ socket:
 
     int 0x80
 
+    add esp, 12
+
     cmp eax, 0
     jle .socket_fail
 
@@ -95,6 +97,8 @@ socket:
     mov ecx, esp
     int 0x80
 
+    add esp, 20
+
     ;mov [sock], eax
     ret
     .socket_fail:
@@ -110,7 +114,7 @@ connect:
 
     push sockaddr_in_len
     push pop_sa
-    push sock
+    push DWORD [sock]
 
     mov ecx, esp
 
@@ -140,8 +144,8 @@ fail:
 
 
 load_address:
-    mov BYTE [edi + 0], IP_4
-    mov BYTE [edi + 1], IP_3
-    mov BYTE [edi + 2], IP_2
-    mov BYTE [edi + 3], IP_1
+    mov BYTE [edi + 0], IP_1
+    mov BYTE [edi + 1], IP_2
+    mov BYTE [edi + 2], IP_3
+    mov BYTE [edi + 3], IP_4
     ret
