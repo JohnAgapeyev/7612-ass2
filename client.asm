@@ -137,7 +137,7 @@ connect:
     jmp fail
 
 fail:
-    mov eax, 1 ; SYS_WRITE
+    mov eax, 4 ; SYS_WRITE
     mov ebx, 2 ; STDERR
     int 0x80
     jmp exit
