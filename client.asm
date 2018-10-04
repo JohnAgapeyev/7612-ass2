@@ -12,7 +12,7 @@ section .data
     connect_err_msg db "Failed to connect to server", 0x0a, 0
     connect_err_msg_len equ $-connect_err_msg
 
-    server_msg db "Server responded with: ", 0
+    server_msg db " responded with: ", 0
     server_msg_len equ $-server_msg
 
     ip_prompt db "Enter the server IP: ", 0
@@ -38,6 +38,7 @@ section .data
 section .bss
     sock resd 1
     buffer resb 256
+    temp_buf resb 256
     mesg_count resd 1
     address resd 1
     port resw 1
@@ -57,9 +58,6 @@ _start:
 
     call read_address
     call load_address
-
-    mov eax, [address]
-    call write_address
 
     ; Write
     mov eax, 4
@@ -91,7 +89,7 @@ _start:
 
     call connect
 
-    mov esi, [mesg_count]
+    mov edi, [mesg_count]
 
     .read:
     ; Read
@@ -123,6 +121,17 @@ _start:
 
     push eax
 
+    mov ecx, eax
+    xor edx, edx
+    .save_buf:
+    mov eax, [buffer + (edx * 4)]
+    mov [temp_buf + (edx * 4)], eax
+    inc edx
+    loop .save_buf
+
+    mov eax, [address]
+    call write_address
+
     ; Write
     mov eax, 4
     mov ebx, 1
@@ -132,12 +141,12 @@ _start:
 
     ; Write
     mov eax, 4
-    mov ecx, buffer
+    mov ecx, temp_buf
     pop edx
     int 0x80
 
-    dec esi
-    test esi, esi
+    dec edi
+    test edi, edi
     jz exit
 
     jmp .read
