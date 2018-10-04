@@ -24,6 +24,9 @@ section .data
     count_prompt db "Enter the message count: ", 0
     count_prompt_len equ $-count_prompt
 
+    client_msg db "Client message ", '0', 0
+    client_msg_len equ $-client_msg
+
     pop_sa istruc sockaddr_in
         ; AF_INET
         at sockaddr_in.sin_family, dw 2
@@ -92,22 +95,22 @@ _start:
     mov edi, [mesg_count]
 
     .read:
-    ; Read
-    mov eax, 3
-    ; stdin
-    mov ebx, 0
-    mov ecx, buffer
-    mov edx, 256
-    int 0x80
-
-    cmp eax, 0
-    jl exit
-
-    mov edx, eax
     mov eax, 4
     mov ebx, [sock]
-    mov ecx, buffer
+    mov ecx, client_msg
+    mov edx, client_msg_len
     int 0x80
+
+    inc BYTE [client_msg + client_msg_len - 2]
+
+    mov eax, 4
+    mov ebx, [sock]
+    push 0xa
+    mov ecx, esp
+    mov edx, 1
+    int 0x80
+
+    add esp, 4
 
     ; Read
     mov eax, 3
