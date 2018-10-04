@@ -88,6 +88,8 @@ _start:
 
     call connect
 
+    mov esi, [mesg_count]
+
     .read:
     ; Read
     mov eax, 3
@@ -130,6 +132,11 @@ _start:
     mov ecx, buffer
     pop edx
     int 0x80
+
+    dec esi
+    test esi, esi
+    jz exit
+
     jmp .read
 
 exit:
