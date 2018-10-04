@@ -46,6 +46,8 @@ section .bss
     sock resd 1
     buffer resb 256
     mesg_count resd 1
+    address resd 1
+    port resw 1
 
 section .text
 global _start
@@ -60,10 +62,42 @@ _start:
 
     call socket
 
-    call connect
+    ; Write
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, ip_prompt
+    mov edx, ip_prompt_len
+    int 0x80
+
+    call read_address
+
+    ; Write
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, port_prompt
+    mov edx, port_prompt_len
+    int 0x80
+
+    call read_num_value
+    mov WORD [port], ax
+
+    ; Bounds check the port
+    cmp eax, 0
+    jle exit
+    cmp eax, 65535
+    jg exit
+
+    ; Write
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, count_prompt
+    mov edx, count_prompt_len
+    int 0x80
 
     call read_num_value
     mov DWORD [mesg_count], eax
+
+    call connect
 
     .read:
     ; Read
@@ -195,7 +229,6 @@ fail:
     int 0x80
     jmp exit
 
-
 load_address:
     mov BYTE [edi + 0], IP_1
     mov BYTE [edi + 1], IP_2
@@ -209,6 +242,69 @@ load_port:
     shr eax, 16
     mov WORD [edi], ax
     ret
+
+read_address:
+    ;Read string into buffer
+    mov eax, 3
+    mov ebx, 0
+    mov ecx, buffer
+    mov edx, 15
+    int 0x80
+
+    ;Grab number of bytes read
+    mov ecx, eax
+    sub ecx, 2
+
+    xor eax, eax
+    mov ebx, 1
+
+    xor edi, edi
+
+    jmp .loop_start
+
+    .loo:
+    ;Grab current buffer byte
+    mov dl, [buffer + ecx]
+    ;Check if byte is less than '.'
+    cmp dl, '.'
+    je .next_term
+    ;Check if byte is less than '0'
+    cmp dl, '0'
+    jl exit
+    ;Check if byte is greater than '9'
+    cmp dl, '9'
+    jg exit
+
+    ;eax = (buffer[ecx] & 0xf) * ebx
+    and edx, 0xf
+    imul edx, ebx
+    add eax, edx
+
+    ;ebx *= 10
+    imul ebx, 10
+
+    dec ecx
+
+    .loop_start:
+    ;Loop condition
+    cmp ecx, 0
+    jge .loo
+    ;Prevent overflow on ip term
+    cmp eax, 255
+    jg exit
+    mov BYTE [address + edi], al
+    ret
+    .next_term:
+    dec ecx
+    ;Prevent overflow on ip term
+    cmp eax, 255
+    jg exit
+    ;Save byte somewhere before xoring
+    mov BYTE [address + edi], al
+    inc edi
+    xor eax, eax
+    mov ebx, 1
+    jmp .loop_start
 
 read_num_value:
     ;Read string into buffer
@@ -232,11 +328,11 @@ read_num_value:
     mov dl, [buffer + ecx]
     ;Check if byte is negative sign
     cmp dl, 0x2d
-    je negative
+    je .negative
     ;Check if byte is less than '0'
     cmp dl, 0x30
     jl exit
-    ;Check if byte is greater than '0'
+    ;Check if byte is greater than '9'
     cmp dl, 0x39
     jg exit
 
