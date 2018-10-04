@@ -24,13 +24,6 @@ section .data
     count_prompt db "Enter the message count: ", 0
     count_prompt_len equ $-count_prompt
 
-    IP_1 equ 127
-    IP_2 equ 0
-    IP_3 equ 0
-    IP_4 equ 1
-
-    PORT equ 12345
-
     pop_sa istruc sockaddr_in
         ; AF_INET
         at sockaddr_in.sin_family, dw 2
@@ -53,13 +46,6 @@ section .text
 global _start
 
 _start:
-    ; Fill address into struct
-    lea edi, [pop_sa + sockaddr_in.sin_addr]
-    call load_address
-    ; Fill port into struct
-    lea edi, [pop_sa + sockaddr_in.sin_port]
-    call load_port
-
     call socket
 
     ; Write
@@ -70,6 +56,7 @@ _start:
     int 0x80
 
     call read_address
+    call load_address
 
     ; Write
     mov eax, 4
@@ -86,6 +73,8 @@ _start:
     jle exit
     cmp eax, 65535
     jg exit
+
+    call load_port
 
     ; Write
     mov eax, 4
@@ -230,17 +219,16 @@ fail:
     jmp exit
 
 load_address:
-    mov BYTE [edi + 0], IP_1
-    mov BYTE [edi + 1], IP_2
-    mov BYTE [edi + 2], IP_3
-    mov BYTE [edi + 3], IP_4
+    mov eax, [address]
+    bswap eax
+    mov DWORD [pop_sa + sockaddr_in.sin_addr], eax
     ret
 
 load_port:
-    mov ax, PORT
+    mov eax, [port]
     bswap eax
     shr eax, 16
-    mov WORD [edi], ax
+    mov WORD [pop_sa + sockaddr_in.sin_port], ax
     ret
 
 read_address:
@@ -311,7 +299,7 @@ read_num_value:
     mov eax, 3
     mov ebx, 0
     mov ecx, buffer
-    mov edx, 5
+    mov edx, 10
     int 0x80
 
     ;Grab number of bytes read
