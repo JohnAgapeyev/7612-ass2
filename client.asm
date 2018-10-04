@@ -58,6 +58,9 @@ _start:
     call read_address
     call load_address
 
+    mov eax, [address]
+    call write_address
+
     ; Write
     mov eax, 4
     mov ebx, 1
@@ -350,6 +353,51 @@ read_num_value:
     neg eax
     ret
 
+; eax is the address
+write_address:
+    push eax
+    shr eax, 24
+    call write_val
+
+    mov eax, 4
+    mov ebx, 1
+    push '.'
+    mov ecx, esp
+    mov edx, 1
+    int 0x80
+
+    add esp, 4
+    pop eax
+    push eax
+    shr eax, 16
+    and eax, 0x000000ff
+    call write_val
+
+    mov eax, 4
+    mov ebx, 1
+    push '.'
+    mov ecx, esp
+    mov edx, 1
+    int 0x80
+    add esp, 4
+    pop eax
+    push eax
+    shr eax, 8
+    and eax, 0x000000ff
+    call write_val
+
+    mov eax, 4
+    mov ebx, 1
+    push '.'
+    mov ecx, esp
+    mov edx, 1
+    int 0x80
+    add esp, 4
+    pop eax
+    and eax, 0x000000ff
+    call write_val
+    ret
+
 ;eax is the value
 write_val:
     cmp eax, 0
@@ -480,10 +528,7 @@ write_val:
     ;Store the 1 byte
     mov BYTE [buffer + 4], dl
 
-    ;Add newline char
-    mov BYTE [buffer + 5], 0xa
-
-    add esi, 2
+    inc esi
 
     ;Write
     mov eax, 4
@@ -491,7 +536,7 @@ write_val:
     mov ecx, buffer
 
     ;Offset ecx by byte counter to prevent zero padding the string
-    add ecx, 6
+    add ecx, 5
     sub ecx, esi
 
     mov edx, esi
