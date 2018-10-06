@@ -1,0 +1,15 @@
+[01;34m.[00m
+├── [01;34mdocs[00m
+│   ├── 7612_Assignment_2_Design.pdf
+│   └── 7612_Assignment_2_Testing.pdf
+├── LICENSE
+├── Manifest
+├── README.md
+└── [01;34msrc[00m
+    ├── client.asm
+    ├── [01;32mclient.out[00m
+    ├── Makefile
+    ├── server.asm
+    └── [01;32mserver.out[00m
+
+2 directories, 10 files
