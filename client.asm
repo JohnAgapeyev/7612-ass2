@@ -49,6 +49,11 @@ section .bss
 section .text
 global _start
 
+; function:
+;     _start
+;
+;  notes:
+;   the global entry point
 _start:
     call socket
 
@@ -143,11 +148,21 @@ _start:
 
     jmp .read
 
+; function:
+;     exit
+;
+;  notes:
+;   cleanly exit the program
 exit:
     mov eax, 1
     mov ebx, 0
     int 0x80
 
+; function:
+;     socket
+;
+;  notes:
+;   setup the socket using the socketcall syscall and load it into sock
 socket:
     ; socketcall
     mov eax, 102
@@ -199,6 +214,11 @@ socket:
     mov edx, sock_err_msg_len
     jmp fail
 
+; function:
+;     connect
+;
+;  notes:
+;   connect the socket in sock to the address in sockaddr_in
 connect:
     ; socketcall
     mov eax, 102
@@ -223,18 +243,33 @@ connect:
     mov edx, connect_err_msg_len
     jmp fail
 
+; function:
+;     fail
+;
+;  notes:
+;   print an error about connecting and exit the program
 fail:
     mov eax, 4 ; SYS_WRITE
     mov ebx, 2 ; STDERR
     int 0x80
     jmp exit
 
+; function:
+;     load_address
+;
+;  notes:
+;   load the address in address into the sockaddr_in
 load_address:
     mov eax, [address]
     bswap eax
     mov DWORD [pop_sa + sockaddr_in.sin_addr], eax
     ret
 
+; function:
+;     load_port
+;
+;  notes:
+;   load the port in port into the sockaddr_in
 load_port:
     mov eax, [port]
     bswap eax
@@ -242,6 +277,11 @@ load_port:
     mov WORD [pop_sa + sockaddr_in.sin_port], ax
     ret
 
+; function:
+;     read_address
+;
+;  notes:
+;   get the string from the user and load it into address
 read_address:
     ;Read string into buffer
     mov eax, 3
@@ -305,6 +345,14 @@ read_address:
     mov ebx, 1
     jmp .loop_start
 
+; function:
+;     read_num_value
+;
+; return:
+;    eax - the number read
+;
+;  notes:
+;   get a numerical value from the user
 read_num_value:
     ;Read string into buffer
     mov eax, 3
@@ -355,6 +403,14 @@ read_num_value:
     ret
 
 ; eax is the address
+; function:
+;     write_address
+;
+; parameters:
+;    eax the address to print
+;
+;  notes:
+;   print address out
 write_address:
     push eax
     shr eax, 24
@@ -400,6 +456,14 @@ write_address:
     ret
 
 ;eax is the value
+; function:
+;     write_val
+;
+; parameters:
+;    eax the value to print
+;
+;  notes:
+;   print out the ascii of the value
 write_val:
     cmp eax, 0
     jns .write_pos

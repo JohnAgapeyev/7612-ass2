@@ -2,8 +2,8 @@
 ; Assemble and link as follows:
 ; nasm -f elf64 -o server.o server.asm
 ; ld server.o -o server
-; 
-; 
+;
+;
 
 global _start
 
@@ -50,7 +50,7 @@ section .text
 
 ; Sever main entry point
 _start:
-    ; Initialize listening and client socket values to 0, used for cleanup 
+    ; Initialize listening and client socket values to 0, used for cleanup
     mov word [sock], 0
     mov word [client], 0
 
@@ -87,20 +87,20 @@ _start:
     mov rdi, 0
     call _exit
 
-; Performs a sys_socket call to initialise a TCP/IP listening socket. 
+; Performs a sys_socket call to initialise a TCP/IP listening socket.
 ; Stores the socket file descriptor in the sock variable
 _socket:
     mov rax, 41 ; SYS_SOCKET
     mov rdi, 2 ; AF_INET
     mov rsi, 1 ; SOCK_STREAM
-    mov rdx, 0 
+    mov rdx, 0
     syscall
-    
+
     ; Check if socket was created successfully
     cmp rax, 0
     jle _socket_fail
 
-    ; Store the new socket descriptor 
+    ; Store the new socket descriptor
     mov [sock], rax
 
     ret
@@ -119,7 +119,7 @@ _listen:
 
     ; Bind succeeded, call sys_listen
     mov rax, 50 ; SYS_LISTEN
-    mov rsi, 5 ; backlog 
+    mov rsi, 5 ; backlog
     syscall
 
     ; Check for success
@@ -141,7 +141,7 @@ _accept:
     cmp rax, 0
     jl _accept_fail
 
-    ; Store returned client socket descriptor 
+    ; Store returned client socket descriptor
     mov [client], rax
 
     ; Print connection message to stdout
@@ -160,16 +160,16 @@ _read:
     mov rax, 0 ; SYS_READ
     mov rdi, [client] ; client socket fd
     mov rsi, echobuf ; buffer
-    mov rdx, 256 ; read 256 bytes 
-    syscall 
+    mov rdx, 256 ; read 256 bytes
+    syscall
 
     ; Copy number of bytes read to variable
     mov [read_count], rax
 
-    ret 
+    ret
 
 ; Sends up to the value of read_count bytes from echobuf to the client socket
-; using sys_write 
+; using sys_write
 _echo:
     mov rax, 1 ; SYS_WRITE
     mov rdi, [client] ; client socket fd
